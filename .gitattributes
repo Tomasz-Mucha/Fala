@@ -1,0 +1,13 @@
+# Normalizacja końców linii (w repozytorium LF, na Windows przy checkout CRLF)
+* text=auto
+
+*.cs      text diff=csharp
+*.xaml    text
+*.csproj  text
+*.sln     text eol=crlf
+*.sh      text eol=lf
+.githooks/* text eol=lf
+
+*.png     binary
+*.ico     binary
+*.jpg     binary

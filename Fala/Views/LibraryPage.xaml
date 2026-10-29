@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Fala.Views.LibraryPage"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:m="using:Fala.Models"
+    xmlns:h="using:Fala.Helpers"
+    Background="Transparent">
+
+    <Grid Padding="{StaticResource PagePadding}" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="{x:Bind ViewModel.PageTitle, Mode=OneWay}" Style="{StaticResource PageTitleStyle}"/>
+                <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                <ProgressRing Width="24" Height="24" IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}"/>
+                <Button x:Name="AddPodcastButton" Style="{StaticResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE710;" FontSize="14"/>
+                        <TextBlock Text="{x:Bind L.AddPodcast, Mode=OneWay}"/>
+                    </StackPanel>
+                    <Button.Flyout>
+                        <Flyout x:Name="AddPodcastFlyout" Placement="BottomEdgeAlignedRight" Opened="AddPodcastFlyout_Opened">
+                            <StackPanel Width="380" Spacing="12">
+                                <TextBox x:Name="FeedUrlBox"
+                                         Header="{x:Bind L.SubscribeRss, Mode=OneWay}"
+                                         PlaceholderText="{x:Bind L.RssPlaceholder, Mode=OneWay}"
+                                         Text="{x:Bind ViewModel.FeedUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="Feed_KeyDown"/>
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <HyperlinkButton Padding="0" Click="SearchCatalog_Click" VerticalAlignment="Center"
+                                                     Content="{x:Bind L.SearchCatalogInstead, Mode=OneWay}"/>
+                                    <Button Grid.Column="1" Content="{x:Bind L.Subscribe, Mode=OneWay}"
+                                            Style="{StaticResource AccentButtonStyle}"
+                                            Click="SubscribeFromFlyout_Click"/>
+                                </Grid>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="1" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <GridView ItemsSource="{x:Bind ViewModel.Podcasts, Mode=OneWay}"
+                      SelectedItem="{x:Bind ViewModel.Selected, Mode=TwoWay}"
+                      SelectionChanged="Podcasts_SelectionChanged"
+                      SelectionMode="Single"
+                      IsItemClickEnabled="True"
+                      Background="Transparent"
+                      Padding="0,8,0,0">
+                <GridView.ItemContainerStyle>
+                    <Style TargetType="GridViewItem">
+                        <Setter Property="Margin" Value="0,0,12,16"/>
+                        <Setter Property="MinWidth" Value="0"/>
+                        <Setter Property="Padding" Value="6"/>
+                    </Style>
+                </GridView.ItemContainerStyle>
+                <GridView.ItemTemplate>
+                    <DataTemplate x:DataType="m:Podcast">
+                        <StackPanel Tag="{x:Bind}" Width="160">
+                            <StackPanel.ContextFlyout>
+                                <MenuFlyout Opening="PodcastMenu_Opening"/>
+                            </StackPanel.ContextFlyout>
+                            <Grid Width="160" Height="160">
+                                <Border CornerRadius="10"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1">
+                                    <FontIcon Glyph="&#xE8D6;" FontSize="36"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Border CornerRadius="10">
+                                    <Image Stretch="UniformToFill" Source="{x:Bind h:Artwork.FromUrlLarge(ArtworkUrl)}"/>
+                                </Border>
+                                <InfoBadge HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,6,0"
+                                           Value="{x:Bind NewCount, Mode=OneWay}"
+                                           Visibility="{x:Bind h:Vis.If(HasNew), Mode=OneWay}"/>
+                            </Grid>
+                            <TextBlock Margin="2,8,2,0" Text="{x:Bind Title}"
+                                       Style="{StaticResource BodyStrongTextBlockStyle}"
+                                       TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Margin="2,2,2,0" Text="{x:Bind Author}"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </GridView.ItemTemplate>
+            </GridView>
+
+            <Grid Grid.Column="1" Width="420"
+                  Visibility="{x:Bind h:Vis.If(ViewModel.HasSelection), Mode=OneWay}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid ColumnSpacing="12" Margin="0,0,0,8"
+                      Visibility="{x:Bind h:Vis.If(ViewModel.HasSelection), Mode=OneWay}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid Width="72" Height="72">
+                        <Border CornerRadius="8" Background="{ThemeResource SubtleFillColorSecondaryBrush}">
+                            <FontIcon Glyph="&#xE8D6;" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border CornerRadius="8">
+                            <Image Stretch="UniformToFill"
+                                   Source="{x:Bind h:Artwork.FromUrlLarge(ViewModel.SelectedArtwork), Mode=OneWay}"/>
+                        </Border>
+                    </Grid>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind ViewModel.SelectedTitle, Mode=OneWay}"
+                                   Style="{StaticResource SubtitleTextBlockStyle}"
+                                   TextWrapping="Wrap"/>
+                        <TextBlock Text="{x:Bind ViewModel.SelectedAuthor, Mode=OneWay}"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+                </Grid>
+
+                <CommandBar Grid.Row="1" DefaultLabelPosition="Right" OverflowButtonVisibility="Auto"
+                            Background="Transparent" HorizontalAlignment="Left" Margin="0,0,0,8">
+                    <AppBarButton Icon="Add" Label="{x:Bind L.AddPodcasts, Mode=OneWay}" Click="AddPodcasts_Click"
+                                  Visibility="{x:Bind h:Vis.If(ViewModel.IsGroupView), Mode=OneWay}"/>
+                    <AppBarButton Icon="Refresh" Label="{x:Bind L.Refresh, Mode=OneWay}" Command="{x:Bind ViewModel.RefreshSelectedCommand}"/>
+                    <AppBarButton Icon="Download" Label="{x:Bind L.DownloadEpisodes, Mode=OneWay}" Click="DownloadAll_Click"
+                                  ToolTipService.ToolTip="{x:Bind L.DownloadTooltip, Mode=OneWay}"/>
+                    <AppBarButton Icon="Cancel" Label="{x:Bind L.Cancel, Mode=OneWay}"
+                                  Command="{x:Bind ViewModel.CancelDownloadCommand}"
+                                  Visibility="{x:Bind h:Vis.If(ViewModel.IsDownloading), Mode=OneWay}"/>
+                    <AppBarSeparator/>
+                    <AppBarButton Label="{x:Bind L.RemoveFromGroup, Mode=OneWay}" Click="RemoveFromGroup_Click"
+                                  Visibility="{x:Bind h:Vis.If(ViewModel.IsGroupView), Mode=OneWay}">
+                        <AppBarButton.Icon>
+                            <FontIcon Glyph="&#xE738;"/>
+                        </AppBarButton.Icon>
+                    </AppBarButton>
+                    <AppBarButton Icon="Delete" Label="{x:Bind L.RemovePodcast, Mode=OneWay}" Command="{x:Bind ViewModel.RemoveSelectedCommand}"/>
+                    <CommandBar.SecondaryCommands>
+                        <AppBarButton Label="{x:Bind L.MarkAllPlayed, Mode=OneWay}" Command="{x:Bind ViewModel.MarkAllPlayedCommand}">
+                            <AppBarButton.Icon>
+                                <FontIcon Glyph="&#xE73E;"/>
+                            </AppBarButton.Icon>
+                        </AppBarButton>
+                        <AppBarButton Label="{x:Bind L.MarkAllUnplayed, Mode=OneWay}" Command="{x:Bind ViewModel.MarkAllUnplayedCommand}">
+                            <AppBarButton.Icon>
+                                <FontIcon Glyph="&#xE7A7;"/>
+                            </AppBarButton.Icon>
+                        </AppBarButton>
+                    </CommandBar.SecondaryCommands>
+                </CommandBar>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                    <ComboBox MinWidth="160" SelectedIndex="{x:Bind ViewModel.EpisodeFilter, Mode=TwoWay}"
+                              ToolTipService.ToolTip="{x:Bind L.FilterLabel, Mode=OneWay}">
+                        <ComboBoxItem Content="{x:Bind L.FilterAll, Mode=OneWay}"/>
+                        <ComboBoxItem Content="{x:Bind L.FilterUnplayed, Mode=OneWay}"/>
+                        <ComboBoxItem Content="{x:Bind L.FilterDownloaded, Mode=OneWay}"/>
+                    </ComboBox>
+                    <ComboBox MinWidth="180" SelectedIndex="{x:Bind ViewModel.EpisodeSort, Mode=TwoWay}"
+                              ToolTipService.ToolTip="{x:Bind L.SortLabel, Mode=OneWay}">
+                        <ComboBoxItem Content="{x:Bind L.SortNewest, Mode=OneWay}"/>
+                        <ComboBoxItem Content="{x:Bind L.SortOldest, Mode=OneWay}"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <TextBlock Grid.Row="3" Margin="0,16,0,0"
+                           Text="{x:Bind L.FilterEmpty, Mode=OneWay}"
+                           Style="{StaticResource BodyTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Visibility="{x:Bind h:Vis.If(ViewModel.IsFilteredEmpty), Mode=OneWay}"/>
+
+                <ListView Grid.Row="3"
+                          ItemsSource="{x:Bind ViewModel.Episodes, Mode=OneWay}"
+                          IsItemClickEnabled="True"
+                          ItemClick="Episodes_ItemClick"
+                          SelectionMode="None"
+                          Background="Transparent">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem" BasedOn="{StaticResource QuietListViewItemStyle}"/>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="m:Episode">
+                            <Grid Tag="{x:Bind}" ColumnSpacing="12">
+                                <Grid.ContextFlyout>
+                                    <MenuFlyout Opening="EpisodeMenu_Opening"/>
+                                </Grid.ContextFlyout>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{x:Bind Title}" Style="{StaticResource BodyTextBlockStyle}"
+                                               TextWrapping="Wrap" Opacity="{x:Bind TitleOpacity}"/>
+                                    <ProgressBar Minimum="0" Maximum="100"
+                                                 Value="{x:Bind ProgressPercent}"
+                                                 Height="3"
+                                                 Visibility="{x:Bind h:Vis.If(ShowProgress)}"/>
+                                    <ProgressBar Minimum="0" Maximum="100"
+                                                 Value="{x:Bind DownloadPercent, Mode=OneWay}"
+                                                 Height="3"
+                                                 ShowPaused="False"
+                                                 Visibility="{x:Bind h:Vis.If(IsDownloading), Mode=OneWay}"/>
+                                    <TextBlock Text="{x:Bind MetaText, Mode=OneWay}"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                    <Button Style="{StaticResource IconButtonStyle}"
+                                            Command="{Binding ViewModel.DownloadEpisodeCommand, ElementName=Root}"
+                                            CommandParameter="{Binding}"
+                                            Visibility="{x:Bind h:Vis.If(ShowDownloadButton), Mode=OneWay}">
+                                        <FontIcon Glyph="&#xE118;" FontSize="14"/>
+                                    </Button>
+                                    <FontIcon Glyph="&#xE73E;" FontSize="14"
+                                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                              Visibility="{x:Bind h:Vis.If(IsDownloaded), Mode=OneWay}"/>
+                                    <Button Style="{StaticResource IconButtonStyle}" IsHitTestVisible="False">
+                                        <FontIcon Glyph="&#xE768;" FontSize="14"/>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </Grid>
+    </Grid>
+</Page>

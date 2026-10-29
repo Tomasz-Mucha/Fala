@@ -1,0 +1,92 @@
+name: Release
+
+# Wydanie: git tag v0.4.0 && git push origin v0.4.0
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Testy
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - run: dotnet test Fala.Tests/Fala.Tests.csproj -c Release
+
+      - name: Kontrola licencji zależności
+        shell: pwsh
+        run: ./tools/Generate-ThirdPartyNotices.ps1 -Check
+
+  package:
+    name: Paczka (${{ matrix.rid }})
+    needs: test
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - platform: x64
+            rid: win-x64
+          - platform: ARM64
+            rid: win-arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Wersja z tagu
+        id: version
+        shell: pwsh
+        run: '"value=$("${{ github.ref_name }}".TrimStart("v"))" >> $env:GITHUB_OUTPUT'
+
+      # Samodzielna paczka: zawiera .NET i Windows App SDK — nic nie trzeba instalować.
+      - name: Publish
+        run: >
+          dotnet publish Fala/Fala.csproj -c Release
+          -p:Platform=${{ matrix.platform }} -r ${{ matrix.rid }} --self-contained true
+          -p:Version=${{ steps.version.outputs.value }}
+          -p:DebugType=none
+          -o publish
+
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path publish/* -DestinationPath "Fala-${{ steps.version.outputs.value }}-${{ matrix.rid }}.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Fala-${{ matrix.rid }}
+          path: Fala-*.zip
+          if-no-files-found: error
+
+  release:
+    name: GitHub Release
+    needs: package
+    runs-on: ubuntu-latest
+    # Zapis tylko w tym jednym kroku — tworzy wydanie i dołącza paczki.
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Utwórz wydanie
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "${{ github.ref_name }}" dist/*.zip
+          --repo "${{ github.repository }}"
+          --title "Fala ${{ github.ref_name }}"
+          --generate-notes
+          --verify-tag

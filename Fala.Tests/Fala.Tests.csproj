@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <!-- C# 14 (SDK .NET 10): właściwości partial dla [ObservableProperty] bez LangVersion=preview -->
+    <LangVersion>14</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Fala.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <!--
+    Logika bez zależności od WinUI jest kompilowana bezpośrednio z projektu aplikacji
+    (aplikacji WinUI nie da się wygodnie referencjonować z projektu testów).
+    Dodając tu plik, pilnuj, żeby nie używał Microsoft.UI.*.
+  -->
+  <ItemGroup>
+    <Compile Include="..\Fala\Localization\Loc.cs" Link="App\Loc.cs" />
+    <Compile Include="..\Fala\Models\Episode.cs" Link="App\Episode.cs" />
+    <Compile Include="..\Fala\Models\Podcast.cs" Link="App\Podcast.cs" />
+    <Compile Include="..\Fala\Models\HistoryItem.cs" Link="App\HistoryItem.cs" />
+    <Compile Include="..\Fala\Helpers\TimeText.cs" Link="App\TimeText.cs" />
+    <Compile Include="..\Fala\Helpers\ShowNotes.cs" Link="App\ShowNotes.cs" />
+    <Compile Include="..\Fala\Helpers\BookmarkExport.cs" Link="App\BookmarkExport.cs" />
+    <Compile Include="..\Fala\Models\Bookmark.cs" Link="App\Bookmark.cs" />
+    <Compile Include="..\Fala\Helpers\HistorySearch.cs" Link="App\HistorySearch.cs" />
+    <Compile Include="..\Fala\Services\RssService.cs" Link="App\RssService.cs" />
+    <Compile Include="..\Fala\Helpers\AppInfo.cs" Link="App\AppInfo.cs" />
+    <Compile Include="..\Fala\Services\OpmlService.cs" Link="App\OpmlService.cs" />
+  </ItemGroup>
+</Project>

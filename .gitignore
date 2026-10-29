@@ -1,0 +1,59 @@
+# Wyniki kompilacji
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+ARM64/
+AppPackages/
+BundleArtifacts/
+*.msix
+*.msixbundle
+*.appx
+*.appxbundle
+
+# Visual Studio / Rider / VS Code — stan lokalny IDE
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+launchSettings.json
+*.pubxml.user
+
+# NuGet
+*.nupkg
+packages/
+project.lock.json
+
+# Certyfikaty, klucze i sekrety — nigdy do repozytorium
+*.pfx
+*.p12
+*.snk
+*.pem
+*.key
+*.cer
+*.crt
+*_TemporaryKey.pfx
+.env
+.env.*
+secrets.json
+appsettings.*.local.json
+
+# Lokalne dane aplikacji (baza, ustawienia) — gdyby trafiły do folderu projektu
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+settings.json
+
+# Różne
+*.log
+*.tmp
+~$*
+Thumbs.db
+Desktop.ini
+.DS_Store

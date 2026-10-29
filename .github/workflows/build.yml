@@ -1,0 +1,55 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Workflow tylko czyta kod — bez uprawnień do zapisu w repozytorium.
+permissions:
+  contents: read
+
+# Nowy push na tę samą gałąź anuluje poprzedni, jeszcze trwający przebieg.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Testy
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Testy jednostkowe
+        run: dotnet test Fala.Tests/Fala.Tests.csproj -c Release
+
+      - name: Kontrola licencji zależności
+        shell: pwsh
+        run: ./tools/Generate-ThirdPartyNotices.ps1 -Check
+
+  build:
+    name: Build (${{ matrix.platform }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64, ARM64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Build aplikacji
+        run: dotnet build Fala/Fala.csproj -c Release -p:Platform=${{ matrix.platform }}

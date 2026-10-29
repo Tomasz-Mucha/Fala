@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <RootNamespace>Fala</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Platforms>x64;ARM64</Platforms>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <UseWinUI>true</UseWinUI>
+    <WinUISDKReferences>false</WinUISDKReferences>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <Nullable>enable</Nullable>
+    <!-- C# 14 (SDK .NET 10): właściwości partial dla [ObservableProperty] bez LangVersion=preview -->
+    <LangVersion>14</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <ApplicationTitle>Fala</ApplicationTitle>
+    <ApplicationIcon>icons\Fala.ico</ApplicationIcon>
+    <AssemblyName>Fala</AssemblyName>
+    <AssemblyTitle>Fala</AssemblyTitle>
+    <Product>Fala</Product>
+    <Company>Fala</Company>
+    <Authors>Tomasz Mucha</Authors>
+    <Copyright>Copyright (c) 2026 Tomasz Mucha</Copyright>
+    <Description>Fala</Description>
+    <!-- Wydania nadpisują wersję z tagu (-p:Version=…); FileVersion/InformationalVersion wynikają z niej. -->
+    <Version>0.4.0</Version>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Tylko potrzebne komponenty Windows App SDK (bez AI/ML/Widgets: ONNX Runtime, DirectML itp.) -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="1.8.260803003" />
+    <!-- Runtime: biblioteki środowiska dla trybu samodzielnego (m.in. potrzebne powiadomieniom) -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.Runtime" Version="1.8.260921001" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4654" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.8" />
+  </ItemGroup>
+
+  <!--
+    Fala nie korzysta z funkcji AI Windows App SDK. Pakiet Runtime dołącza je jednak w całości
+    (ONNX Runtime, DirectML, wykrywanie NPU — ok. 43 MB i dodatkowe licencje), więc wycinamy je z publikacji.
+    Te biblioteki ładują się dopiero przy użyciu API Microsoft.Windows.AI.*, którego aplikacja nie wywołuje.
+  -->
+  <Target Name="ExcludeUnusedWindowsAppSdkAI" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <_FalaUnusedAI Include="@(ResolvedFileToPublish)"
+                     Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(Filename)%(Extension)', '^(onnxruntime.*|DirectML\.dll|NPUDetect\.dll|workloads.*\.json|Microsoft\.Windows\.(AI|Workloads|SemanticSearch|Vision|Private\.Workloads)\..*|Microsoft\.Graphics\.Imaging.*)$', System.Text.RegularExpressions.RegexOptions.IgnoreCase))" />
+      <ResolvedFileToPublish Remove="@(_FalaUnusedAI)" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+    <!-- Licencje bibliotek zewnętrznych (generowane: tools/Generate-ThirdPartyNotices.ps1) -->
+    <Content Include="THIRD-PARTY-NOTICES.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <!-- Licencja MIT samej Fali (wymaga dołączenia tekstu licencji do kopii programu) -->
+    <Content Include="..\LICENSE" Link="LICENSE.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="icons\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Druga linia obrony: skanuje wszystkie pliki zmienione w wysyłanych commitach
+# (łapie też commity zrobione z --no-verify albo na innym komputerze).
+hooks_dir=$(dirname "$0")
+zero=0000000000000000000000000000000000000000
+status=0
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue   # usuwanie gałęzi
+  if [ "$remote_sha" = "$zero" ]; then
+    # Nowa gałąź: wszystkie commity, których nie ma jeszcze na zdalnym.
+    commits=$(git rev-list "$local_sha" --not --remotes)
+  else
+    commits=$(git rev-list "$remote_sha..$local_sha")
+  fi
+  for commit in $commits; do
+    mapfile -t files < <(git diff-tree --no-commit-id --name-only -r --root --diff-filter=ACMR "$commit")
+    [ ${#files[@]} -eq 0 ] && continue
+    if ! bash "$hooks_dir/scan.sh" "$commit" "${files[@]}"; then
+      echo "(commit ${commit:0:8})" >&2
+      status=1
+    fi
+  done
+done
+
+[ "$status" -ne 0 ] && echo "Push zablokowany." >&2
+exit $status
